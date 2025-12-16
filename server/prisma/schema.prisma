@@ -1,0 +1,53 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Customer {
+  id            String    @id @default(uuid())
+  name          String
+  mobile        String
+  email         String?
+  tourType      String
+  travelDate    String
+  status        String    @default("Pending") // Pending, Converted, Follow-up
+  assignedStaff String
+  destination   String
+  travellers    String
+  requirements  String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  bookings      Booking[]
+}
+
+model Booking {
+  id            String   @id @default(uuid())
+  customerId    String
+  customer      Customer @relation(fields: [customerId], references: [id])
+  customerName  String
+  tourType      String
+  destination   String
+  startDate     String
+  status        String   @default("Confirmed") // Confirmed, Completed, Cancelled
+  totalAmount   Float
+  paidAmount    Float
+  balanceAmount Float
+  details       Json?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model Vehicle {
+  id            String   @id @default(uuid())
+  vehicleNumber String   @unique
+  type          String
+  status        String   @default("Available") // Available, Booked, Under Maintenance
+  driver        String
+  lastService   String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
