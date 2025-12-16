@@ -22,6 +22,8 @@ export function VehicleManagement({ onNavigate }: VehicleManagementProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [formData, setFormData] = useState({
     vehicleId: '',
+    numberPlate: '',
+    vehicleType: '',
     customerName: '',
     destination: '',
     driverName: '',
@@ -51,26 +53,53 @@ export function VehicleManagement({ onNavigate }: VehicleManagementProps) {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
+  const [modalMode, setModalMode] = useState<'add-vehicle' | 'create-booking'>('create-booking');
+
   const handleSubmit = () => {
-    if (formData.vehicleId) {
-      updateVehicle(formData.vehicleId, {
-        status: 'Booked',
-        driver: formData.driverName
+    if (modalMode === 'add-vehicle') {
+      // Validate inputs for adding vehicle
+      if (!formData.numberPlate || !formData.vehicleType || !formData.driverName) {
+        toast.error("Please fill in Vehicle Number, Type and Driver");
+        return;
+      }
+
+      // Add new vehicle to DB (using generic type since ID is generated)
+      // We map form fields to Vehicle interface
+      // Note: useData's addVehicle expects a Vehicle object
+      // We'll mock the missing fields or add them to form
+      addVehicle({
+        id: Date.now().toString(), // Temp ID, backend should generate UUID
+        vehicleNumber: formData.numberPlate,
+        type: formData.vehicleType,
+        status: 'Available',
+        driver: formData.driverName,
+        lastService: new Date().toISOString().split('T')[0] // Default to today
       });
-      toast.success(`Vehicle assigned to ${formData.customerName} successfully!`);
+      toast.success("New vehicle added to fleet!");
     } else {
-      toast.error("Please select a vehicle.");
-      return;
+      // Booking Logic (Update existing)
+      if (formData.vehicleId) {
+        updateVehicle(formData.vehicleId, {
+          status: 'Booked',
+          driver: formData.driverName
+        });
+        toast.success(`Vehicle assigned to ${formData.customerName} successfully!`);
+      } else {
+        toast.error("Please select a vehicle.");
+        return;
+      }
     }
 
     setIsAddModalOpen(false);
     setFormData({
       vehicleId: '',
+      numberPlate: '',
       customerName: '',
       destination: '',
       driverName: '',
       fuelExpense: '',
       notes: '',
+      vehicleType: '',
     });
   };
 
@@ -82,13 +111,29 @@ export function VehicleManagement({ onNavigate }: VehicleManagementProps) {
           <h1 className="text-[#8B1538] mb-2">Vehicle Management</h1>
           <p className="text-gray-600">Manage vehicles, drivers, and bookings</p>
         </div>
-        <Button
-          onClick={() => setIsAddModalOpen(true)}
-          className="bg-[#8B1538] hover:bg-[#6B0F28]"
-        >
-          <Plus className="w-5 h-5 mr-2" />
-          Create Booking
-        </Button>
+        <div className="flex gap-4">
+          <Button
+            onClick={() => {
+              setModalMode('add-vehicle');
+              setIsAddModalOpen(true);
+            }}
+            variant="outline"
+            className="border-[#8B1538] text-[#8B1538] hover:bg-[#8B1538]/10"
+          >
+            <Plus className="w-5 h-5 mr-2" />
+            Add New Vehicle
+          </Button>
+          <Button
+            onClick={() => {
+              setModalMode('create-booking');
+              setIsAddModalOpen(true);
+            }}
+            className="bg-[#8B1538] hover:bg-[#6B0F28]"
+          >
+            <Plus className="w-5 h-5 mr-2" />
+            Create Booking
+          </Button>
+        </div>
       </div>
 
       {/* Search */}
@@ -154,18 +199,20 @@ export function VehicleManagement({ onNavigate }: VehicleManagementProps) {
         </CardContent>
       </Card>
 
-      {/* Create Booking Modal */}
+      {/* Dynamic Modal */}
       <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Create Vehicle Booking</DialogTitle>
+            <DialogTitle>{modalMode === 'add-vehicle' ? 'Register New Vehicle' : 'Create Vehicle Booking'}</DialogTitle>
             <DialogDescription>
-              Assign a vehicle to a customer booking
+              {modalMode === 'add-vehicle' ? 'Add a new vehicle to your fleet' : 'Assign a vehicle to a customer booking'}
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+              {/* Common Fields */}
               <div>
                 <Label htmlFor="vehicleType">Vehicle Type *</Label>
                 <Select
@@ -173,7 +220,7 @@ export function VehicleManagement({ onNavigate }: VehicleManagementProps) {
                   onValueChange={(value) => handleChange('vehicleType', value)}
                 >
                   <SelectTrigger className="mt-2">
-                    <SelectValue placeholder="Select vehicle" />
+                    <SelectValue placeholder="Select vehicle type" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="sedan">Sedan</SelectItem>
@@ -185,56 +232,86 @@ export function VehicleManagement({ onNavigate }: VehicleManagementProps) {
               </div>
 
               <div>
-                <Label htmlFor="customerName">Customer Name *</Label>
-                <Input
-                  id="customerName"
-                  value={formData.customerName}
-                  onChange={(e) => handleChange('customerName', e.target.value)}
-                  placeholder="Enter customer name"
-                  className="mt-2"
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="destination">Destination *</Label>
-                <Input
-                  id="destination"
-                  value={formData.destination}
-                  onChange={(e) => handleChange('destination', e.target.value)}
-                  placeholder="Enter destination"
-                  className="mt-2"
-                />
-              </div>
-
-              <div>
                 <Label htmlFor="driverName">Driver Name *</Label>
-                <Select
-                  value={formData.driverName}
-                  onValueChange={(value) => handleChange('driverName', value)}
-                >
-                  <SelectTrigger className="mt-2">
-                    <SelectValue placeholder="Select driver" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="ramesh">Ramesh Kumar</SelectItem>
-                    <SelectItem value="suresh">Suresh Patel</SelectItem>
-                    <SelectItem value="mahesh">Mahesh Singh</SelectItem>
-                    <SelectItem value="dinesh">Dinesh Sharma</SelectItem>
-                  </SelectContent>
-                </Select>
+                <div className="mt-2">
+                  {/* Assuming free text for now, should be select in real app */}
+                  <Input
+                    id="driverName"
+                    value={formData.driverName}
+                    onChange={(e) => handleChange('driverName', e.target.value)}
+                    placeholder="Enter driver name"
+                  />
+                </div>
               </div>
 
-              <div className="md:col-span-2">
-                <Label htmlFor="fuelExpense">Fuel Expense</Label>
-                <Input
-                  id="fuelExpense"
-                  type="number"
-                  value={formData.fuelExpense}
-                  onChange={(e) => handleChange('fuelExpense', e.target.value)}
-                  placeholder="₹ 0"
-                  className="mt-2"
-                />
-              </div>
+              {/* Add Vehicle Specific Fields */}
+              {modalMode === 'add-vehicle' && (
+                <div>
+                  <Label htmlFor="numberPlate">Vehicle Number Plate *</Label>
+                  <Input
+                    id="numberPlate"
+                    value={formData.numberPlate}
+                    onChange={(e) => handleChange('numberPlate', e.target.value)}
+                    placeholder="e.g. MH 12 AB 1234"
+                    className="mt-2"
+                  />
+                </div>
+              )}
+
+              {/* Booking Specific Fields */}
+              {modalMode === 'create-booking' && (
+                <>
+                  <div>
+                    <Label htmlFor="customerName">Customer Name *</Label>
+                    <Input
+                      id="customerName"
+                      value={formData.customerName}
+                      onChange={(e) => handleChange('customerName', e.target.value)}
+                      placeholder="Enter customer name"
+                      className="mt-2"
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="vehicleId">Select Available Vehicle *</Label>
+                    <Select
+                      value={formData.vehicleId}
+                      onValueChange={(value) => handleChange('vehicleId', value)}
+                    >
+                      <SelectTrigger className="mt-2">
+                        <SelectValue placeholder="Choose from fleet" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {vehicles.filter(v => v.status === 'Available').map(v => (
+                          <SelectItem key={v.id} value={v.id}>{v.vehicleNumber} ({v.type})</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="destination">Destination *</Label>
+                    <Input
+                      id="destination"
+                      value={formData.destination}
+                      onChange={(e) => handleChange('destination', e.target.value)}
+                      placeholder="Enter destination"
+                      className="mt-2"
+                    />
+                  </div>
+                  <div className="md:col-span-2">
+                    <Label htmlFor="fuelExpense">Fuel Expense</Label>
+                    <Input
+                      id="fuelExpense"
+                      type="number"
+                      value={formData.fuelExpense}
+                      onChange={(e) => handleChange('fuelExpense', e.target.value)}
+                      placeholder="₹ 0"
+                      className="mt-2"
+                    />
+                  </div>
+                </>
+              )}
 
               <div className="md:col-span-2">
                 <Label htmlFor="notes">Notes</Label>
@@ -261,7 +338,7 @@ export function VehicleManagement({ onNavigate }: VehicleManagementProps) {
                 onClick={handleSubmit}
                 className="flex-1 bg-[#8B1538] hover:bg-[#6B0F28]"
               >
-                Assign Vehicle
+                {modalMode === 'add-vehicle' ? 'Register Vehicle' : 'Confirm Assignment'}
               </Button>
             </div>
           </div>
