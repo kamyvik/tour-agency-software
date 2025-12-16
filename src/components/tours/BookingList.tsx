@@ -6,6 +6,7 @@ import { Badge } from '../ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { PageType } from '../../App';
+import { useData } from '../../context/DataContext';
 
 interface BookingListProps {
   onNavigate: (page: PageType) => void;
@@ -28,56 +29,9 @@ export function BookingList({ onNavigate }: BookingListProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState('all');
 
-  const bookings: Booking[] = [
-    {
-      id: '1',
-      bookingId: 'BK001',
-      customerName: 'Rajesh Kumar',
-      tourType: 'Local',
-      destination: 'Mumbai City Tour',
-      startDate: '2024-01-15',
-      travellers: 4,
-      totalAmount: '₹12,000',
-      paidAmount: '₹12,000',
-      status: 'Confirmed',
-    },
-    {
-      id: '2',
-      bookingId: 'BK002',
-      customerName: 'Priya Sharma',
-      tourType: 'Domestic',
-      destination: 'Kerala Backwaters',
-      startDate: '2024-01-20',
-      travellers: 2,
-      totalAmount: '₹45,000',
-      paidAmount: '₹20,000',
-      status: 'Pending',
-    },
-    {
-      id: '3',
-      bookingId: 'BK003',
-      customerName: 'Vikram Singh',
-      tourType: 'International',
-      destination: 'Dubai Shopping Festival',
-      startDate: '2024-02-10',
-      travellers: 3,
-      totalAmount: '₹1,85,000',
-      paidAmount: '₹1,85,000',
-      status: 'Confirmed',
-    },
-    {
-      id: '4',
-      bookingId: 'BK004',
-      customerName: 'Anita Desai',
-      tourType: 'Domestic',
-      destination: 'Rajasthan Heritage',
-      startDate: '2024-01-05',
-      travellers: 5,
-      totalAmount: '₹95,000',
-      paidAmount: '₹95,000',
-      status: 'Completed',
-    },
-  ];
+  /* Use real data from Context */
+  const { bookings: contextBookings } = useData();
+  const bookings = contextBookings;
 
   const filteredBookings = bookings.filter((booking) => {
     const matchesSearch =
