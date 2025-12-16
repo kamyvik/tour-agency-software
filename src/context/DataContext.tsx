@@ -72,7 +72,7 @@ interface DataContextType {
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
 
-const API_BASE_URL = 'http://localhost:3000/api';
+const API_BASE_URL = 'https://tour-agency-api.onrender.com/api';
 
 // --- Provider ---
 export function DataProvider({ children }: { children: ReactNode }) {
